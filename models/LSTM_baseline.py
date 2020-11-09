@@ -1,3 +1,5 @@
+from torch import nn
+
 class EncoderLSTM(nn.Module):
   def __init__(self, input_size, embedding_size, hidden_size, num_layers, p):
     super(EncoderLSTM, self).__init__()
@@ -100,6 +102,7 @@ class DecoderLSTM(nn.Module):
     predictions = predictions.squeeze(0)
 
     return predictions, hidden_state, cell_state
+
 """
 input_size_decoder = len(english.vocab)
 decoder_embedding_size = 300
