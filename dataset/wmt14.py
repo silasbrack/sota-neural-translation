@@ -1,7 +1,7 @@
 
 from datasets import load_dataset
 
-def load(lang, type=None):
+def load(lang, type="torch"):
     """
     The first time you load a dataset it will take a while to download all of the files.
     It should then save it to the __pycache__ folder and then load quickly again.
