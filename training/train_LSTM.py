@@ -11,7 +11,7 @@ from torchtext.data.metrics import bleu_score
 from pprint import pprint
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
-sys.path.append(".")
+sys.path.append("./")
 from models.LSTM_baseline import DecoderLSTM, EncoderLSTM, Seq2Seq
 
 
