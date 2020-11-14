@@ -18,6 +18,8 @@ from models.LSTM_baseline import DecoderLSTM, EncoderLSTM, Seq2Seq
 
 spacy_german = spacy.load("de")
 spacy_english = spacy.load("en")
+
+
 def translate_sentence(model, sentence, german, english, device, max_length=50):
     spacy_ger = spacy.load("de")
 
@@ -74,6 +76,7 @@ def checkpoint_and_save(model, best_loss, epoch, optimizer, epoch_loss):
     state = {'model': model,'best_loss': best_loss,'epoch': epoch,'rng_state': torch.get_rng_state(), 'optimizer': optimizer.state_dict(),}
     torch.save(state, '/content/checkpoint-NMT')
     torch.save(model.state_dict(),'/content/checkpoint-NMT-SD')
+
 def tokenize_german(text):
   return [token.text for token in spacy_german.tokenizer(text)]
 
@@ -141,7 +144,6 @@ encoder_dropout = float(0.5)
 
 encoder_lstm = EncoderLSTM(input_size_encoder, encoder_embedding_size,
                            hidden_size, num_layers, encoder_dropout).to(device)
-print(encoder_lstm)
 input_size_decoder = len(english.vocab)
 decoder_embedding_size = 300
 hidden_size = 1024
@@ -153,7 +155,7 @@ decoder_lstm = DecoderLSTM(input_size_decoder, decoder_embedding_size,
                            hidden_size, num_layers, decoder_dropout, output_size).to(device)
 
 model = Seq2Seq(encoder_lstm,decoder_lstm,target_vocab_size,device).to(device)
-
+print(model)
 
 learning_rate = 0.001
 writer = SummaryWriter(f"runs/loss_plot")

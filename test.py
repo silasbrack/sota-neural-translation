@@ -1,35 +1,22 @@
 from torchtext.datasets import Multi30k
 from torchtext.data import Field, BucketIterator
 import torch
+from transformers import AutoTokenizer
+from datasets import load_dataset
 
-SRC = Field(tokenize = "spacy",
-            tokenizer_language="de",
-            init_token = '<sos>',
-            eos_token = '<eos>',
-            lower = True)
+import torch
+from datasets import load_dataset
+from transformers import AutoTokenizer
 
-TRG = Field(tokenize = "spacy",
-            tokenizer_language="en",
-            init_token = '<sos>',
-            eos_token = '<eos>',
-            lower = True)
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'),
-                                                    fields = (SRC, TRG))
+tokenizer1 = AutoTokenizer.from_pretrained("google/bert2bert_L-24_wmt_de_en", pad_token="<pad>", eos_token="</s>", bos_token="<s>")
+#tokenizer2 = AutoTokenizer.from_pretrained("google/bert2bert_L-24_wmt_en_de", pad_token="<pad>", eos_token="</s>", bos_token="<s>")
+model = AutoModelForSeq2SeqLM.from_pretrained("google/bert2bert_L-24_wmt_de_en")
 
-SRC.build_vocab(train_data, min_freq = 2)
-TRG.build_vocab(train_data, min_freq = 2)
+#dataset_train = load_dataset('wmt14', "de-en")["train"]
+dataset_test = load_dataset('wmt14', "de-en")["test"]
 
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-BATCH_SIZE = 128
-
-train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
-    (train_data, valid_data, test_data),
-    batch_size = BATCH_SIZE,
-    device = device)
-for i, batch in enumerate(train_iterator):
-    src = batch.src
-    trg = batch.trg
-    print(src,trg)
+tokenizer1.model_max_length = 64
+encoded = dataset_test.map(lambda example: tokenizer1([example["translation"]["en"],example["translation"]["de"]],truncation=True, padding='max_length'))
+dataloader_test = torch.utils.data.DataLoader(encoded, batch_size=32)
