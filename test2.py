@@ -1,4 +1,3 @@
-
 from datasets import load_dataset
 import torch
 from torch.utils.data import DataLoader
@@ -12,8 +11,10 @@ trainloader = DataLoader(dataset['train'], batch_size=32, shuffle=True)
 # val = next(iter(trainloader))
 tokenizer = AutoTokenizer.from_pretrained("google/bert2bert_L-24_wmt_de_en", pad_token="<pad>", eos_token="</s>", bos_token="<s>")
 de = map(lambda x: tokenizer(x['translation']['de'], truncation=True, padding='max_length'), trainloader)
+a = list(de)
 for n in de:
-    print(n)
+    input_ids = n.input_ids
+
     break
 
 # print(list(asdf))
