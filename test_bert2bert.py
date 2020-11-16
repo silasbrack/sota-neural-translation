@@ -8,6 +8,7 @@ device = "cuda"
 dataset = load_dataset('wmt14', 'de-en')
 trainloader = DataLoader(dataset['train'], batch_size=16, shuffle=True)
 
+# encoded = dataset_test.map(lambda example: tokenizer1([example["translation"]["en"],example["translation"]["de"]],truncation=True, padding='max_length'))
 
 
 tokenizer = AutoTokenizer.from_pretrained("google/bert2bert_L-24_wmt_de_en", pad_token="<pad>", eos_token="</s>", bos_token="<s>")
