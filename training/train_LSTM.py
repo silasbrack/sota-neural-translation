@@ -16,12 +16,12 @@ from models.LSTM_baseline import DecoderLSTM, EncoderLSTM, Seq2Seq
 
 
 
-spacy_german = spacy.load("de")
-spacy_english = spacy.load("en")
+spacy_german = spacy.load("de_core_news_sm")
+spacy_english = spacy.load("en_core_web_sm")
 
 
 def translate_sentence(model, sentence, german, english, device, max_length=50):
-    spacy_ger = spacy.load("de")
+    spacy_ger = spacy.load("de_core_news_sm")
 
     if type(sentence) == str:
         tokens = [token.text.lower() for token in spacy_ger(sentence)]

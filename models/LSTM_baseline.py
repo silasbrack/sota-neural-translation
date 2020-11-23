@@ -29,7 +29,6 @@ class EncoderLSTM(nn.Module):
 
   # Shape of x (26, 32) [Sequence_length, batch_size]
   def forward(self, x):
-
     # Shape -----------> (26, 32, 300) [Sequence_length , batch_size , embedding dims]
     embedding = self.dropout(self.embedding(x))
     
