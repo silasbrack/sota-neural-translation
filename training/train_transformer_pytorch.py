@@ -48,7 +48,7 @@ def checkpoint_and_save(name, model, best_loss, epoch, optimizer, epoch_loss):
     print()
     state = {'model': model,'best_loss': best_loss,'epoch': epoch,'rng_state': torch.get_rng_state(), 'optimizer': optimizer.state_dict(),}
     torch.save(state, name)
-    torch.save(model.state_dict(), name)
+    # torch.save(model.state_dict(), name)
 
 
 def translate_sentence(model, sentence, german, english, device, max_length=50):
@@ -175,6 +175,21 @@ def train(model: nn.Module,
 
     return epoch_loss / len(iterator)
 
+def bleu(data, model, german, english, device):
+    targets = []
+    outputs = []
+
+    for example in data:
+        src = vars(example)["src"]
+        trg = vars(example)["trg"]
+
+        prediction = translate_sentence(model, src, german, english, device)
+        prediction = prediction[:-1] if prediction[-1] == "<eos>" else prediction  # remove <eos> token
+
+        targets.append([trg])
+        outputs.append(prediction)
+
+    return bleu_score(outputs, targets)
 
 def evaluate(model: nn.Module,
              iterator: BucketIterator,
@@ -211,14 +226,14 @@ def epoch_time(start_time: int,
     return elapsed_mins, elapsed_secs
 
 
-N_EPOCHS = 100
+N_EPOCHS = 10
 CLIP = 1
 
 sentence1 = "ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster"
 sentence2 = "a man in a blue shirt is standing on a ladder and cleaning a window"
 
-# best_valid_loss = float('inf')
-best_train_loss = float('inf')
+best_valid_loss = float('inf')
+# best_train_loss = float('inf')
 best_epoch = 0
 
 for epoch in range(N_EPOCHS):
@@ -232,13 +247,13 @@ for epoch in range(N_EPOCHS):
     train_loss = train(model, train_iterator, optimizer, criterion, CLIP)
     valid_loss = evaluate(model, valid_iterator, criterion)
     
-    if train_loss < best_train_loss:
-        best_train_loss = train_loss
+    if valid_loss < best_valid_loss:
+        best_valid_loss = valid_loss
         best_epoch = epoch
-        checkpoint_and_save('transformer.pt', model, best_train_loss, epoch, optimizer, train_loss) 
-        if ((epoch - best_epoch) >= 10):
-            print("no improvement in 10 epochs, break")
-            break
+        checkpoint_and_save('transformer.pt', model, best_valid_loss, epoch, optimizer, valid_loss) 
+    if ((epoch - best_epoch) >= 10):
+        print("no improvement in 10 epochs, break")
+        break
 
     end_time = time.time()
 
@@ -249,29 +264,7 @@ for epoch in range(N_EPOCHS):
     print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
 
 test_loss = evaluate(model, test_iterator, criterion)
+test_bleu = bleu(test_data[1:100], model, SRC, TRG, device)
 
-print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} |')
+print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} | Test BLEU : {test_bleu:.3f} |')
 
-def evaluate_bleu(model: nn.Module,iterator: BucketIterator):
-
-    model.eval()
-
-    epoch_loss = 0
-
-    with torch.no_grad():
-
-        for _, batch in enumerate(iterator):
-
-            src = batch.src
-            trg = batch.trg
-
-            output = model(src, trg, 0) #turn off teacher forcing
-
-            output = output[1:].view(-1, output.shape[-1])
-            trg = trg[1:].view(-1)
-
-            loss = criterion(output, trg)
-
-            epoch_loss += loss.item()
-
-    return epoch_loss / len(iterator)
