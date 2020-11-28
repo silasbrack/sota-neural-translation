@@ -1,13 +1,23 @@
-from torchtext.datasets import Multi30k
+from torchtext.datasets import Multi30k, WMT14
 from torchtext.data import Field, BucketIterator
 from torchtext.data.metrics import bleu_score
 import sys
 sys.path.append("./")
-from models.transformer_pytorch import Encoder,Attention,Decoder,Seq2Seq
+# from models.transformer_pytorch import Encoder,Attention,Decoder,Seq2Seq
 import torch
 import torch.nn as nn
 
-def translate_sentence(model, sentence, german, english, device, max_length=50):
+def get_most_likely_words(number_of_words, output, field):
+    output = torch.softmax(output, dim=0)
+    values, indices  = torch.topk(output, number_of_words, largest=True)
+    return values, [field.vocab.itos[idx] for idx in indices]
+
+def plot_most_likely_words(most_likely_words):
+    import matplotlib.pyplot as plt
+    plt.bar(most_likely_words[1], most_likely_words[0].cpu())
+    plt.show()
+
+def translate_sentence(model, sentence, german, english, device, max_length=50, multiple_guesses=0):
     import spacy
     spacy_ger = spacy.load("de_core_news_sm")
 
@@ -31,6 +41,9 @@ def translate_sentence(model, sentence, german, english, device, max_length=50):
 
         with torch.no_grad():
             output, hidden = model.decoder(previous_word, hidden, encoder_outputs)
+            if multiple_guesses > 1:
+                best_guesses = get_most_likely_words(multiple_guesses, output.flatten(), english)
+                plot_most_likely_words(best_guesses)
             best_guess = output.argmax(1).item()
 
         outputs.append(best_guess)
@@ -40,6 +53,8 @@ def translate_sentence(model, sentence, german, english, device, max_length=50):
             break
 
     translated_sentence = [english.vocab.itos[idx] for idx in outputs]
+    # if multiple_guesses > 1:
+    #     return best_guesses
     return translated_sentence[1:]
 
 def evaluate_bleu(model: nn.Module,iterator: BucketIterator):
@@ -122,8 +137,8 @@ TRG = Field(tokenize = "spacy",
             eos_token = '<eos>',
             lower = True)
 
-train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'),
-                                                    fields = (SRC, TRG))
+train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
+# train_data, valid_data, test_data = WMT14.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
 
 SRC.build_vocab(train_data, min_freq = 2)
 TRG.build_vocab(train_data, min_freq = 2)
@@ -132,34 +147,20 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 BATCH_SIZE = 128
 
-train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
-    (train_data, valid_data, test_data),
+valid_iterator, test_iterator = BucketIterator.splits(
+    (valid_data, test_data),
     batch_size = BATCH_SIZE,
     device = device)
 
-INPUT_DIM = len(SRC.vocab)
-OUTPUT_DIM = len(TRG.vocab)
-
-ENC_EMB_DIM = 256
-DEC_EMB_DIM = 256
-ENC_HID_DIM = 512
-DEC_HID_DIM = 512
-ATTN_DIM = 64
-ENC_DROPOUT = 0.5
-DEC_DROPOUT = 0.5
-
-enc = Encoder(INPUT_DIM, ENC_EMB_DIM, ENC_HID_DIM, DEC_HID_DIM, ENC_DROPOUT)
-attn = Attention(ENC_HID_DIM, DEC_HID_DIM, ATTN_DIM)
-dec = Decoder(OUTPUT_DIM, DEC_EMB_DIM, ENC_HID_DIM, DEC_HID_DIM, DEC_DROPOUT, attn)
-
-model = Seq2Seq(enc, dec, device).to(device)
 a = torch.load('transformer.pt', map_location=device)
-model.load_state_dict(a['model'].state_dict())
+model = a['model']
 
 criterion = nn.CrossEntropyLoss()
 print(evaluate(model, valid_iterator, criterion))
 print(evaluate(model, test_iterator, criterion))
-print(a['epoch'], a['best_loss'])
+# print(a['epoch'], a['best_loss'])
+# test_bleu = bleu(test_data, model, SRC, TRG, device)
+# print(test_bleu)
 
 def bleu(data, model, german, english, device):
     targets = []
@@ -177,19 +178,37 @@ def bleu(data, model, german, english, device):
 
     return bleu_score(outputs, targets)
 
-test_bleu = bleu(test_data, model, SRC, TRG, device)
-print(test_bleu)
+# sentence = "mein name ist sarah"
+# translation = "what if it doesn't work?"
 
-sentence = "mein name ist sarah"
-translation = "what if it doesn't work?"
-
-translated_sentence = translate_sentence(model, sentence, SRC, TRG, device, max_length=50)
-print(f"Translated example sentence: \n {' '.join(translated_sentence)}")
-print(f"Real example sentence: \n {translation}")
+# translated_sentence = translate_sentence(model, sentence, SRC, TRG, device, max_length=50)
+# print(f"Translated example sentence: \n {' '.join(translated_sentence)}")
+# print(f"Real example sentence: \n {translation}")
 
 
 sentence1 = "ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster"
 sentence2 = "a man in a blue shirt is standing on a ladder and cleaning a window"
-translated_sentence1 = translate_sentence(model, sentence1, SRC, TRG, device, max_length=50)
+translated_sentence1 = translate_sentence(model, sentence1, SRC, TRG, device, max_length=50, multiple_guesses=10)
 print(f"Translated example sentence 1: \n {' '.join(translated_sentence1)}")
 print(f"Real example sentence 1: \n {sentence2}")
+
+def plot_heatmap(src, trg, scores):
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    fig, ax = plt.subplots()
+    heatmap = ax.pcolor(scores, cmap='viridis')
+
+    ax.set_xticklabels(trg, minor=False, rotation='vertical')
+    ax.set_yticklabels(src, minor=False)
+
+    ax.xaxis.tick_top()
+    ax.set_xticks(np.arange(scores.shape[1]) + 0.5, minor=False)
+    ax.set_yticks(np.arange(scores.shape[0]) + 0.5, minor=False)
+    ax.invert_yaxis()
+
+    plt.colorbar(heatmap)
+    plt.show()
+
+tokens1 = ['<sos>', 'ein', 'mann', 'in', 'einem', 'blauen', 'hemd', 'steht', 'auf', 'einer', 'leiter', 'und', 'putzt', 'ein', 'fenster', '<eos>']
+translated_sentence1
