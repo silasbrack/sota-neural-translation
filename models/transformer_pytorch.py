@@ -104,7 +104,8 @@ class Decoder(nn.Module):
 
     def _weighted_encoder_rep(self,
                               decoder_hidden: Tensor,
-                              encoder_outputs: Tensor) -> Tensor:
+                              encoder_outputs: Tensor,
+                              return_attn=False) -> Tensor:
 
         a = self.attention(decoder_hidden, encoder_outputs)
 
@@ -116,19 +117,26 @@ class Decoder(nn.Module):
 
         weighted_encoder_rep = weighted_encoder_rep.permute(1, 0, 2)
 
+        if return_attn:
+            return weighted_encoder_rep, a.flatten()
         return weighted_encoder_rep
 
 
     def forward(self,
                 input: Tensor,
                 decoder_hidden: Tensor,
-                encoder_outputs: Tensor) -> Tuple[Tensor]:
+                encoder_outputs: Tensor,
+                return_attn=False) -> Tuple[Tensor]:
 
         input = input.unsqueeze(0)
 
         embedded = self.dropout(self.embedding(input))
 
-        weighted_encoder_rep = self._weighted_encoder_rep(decoder_hidden,
+        if return_attn:
+            weighted_encoder_rep, attn = self._weighted_encoder_rep(decoder_hidden,
+                                                          encoder_outputs, return_attn=return_attn)
+        else:
+            weighted_encoder_rep = self._weighted_encoder_rep(decoder_hidden,
                                                           encoder_outputs)
 
         rnn_input = torch.cat((embedded, weighted_encoder_rep), dim = 2)
@@ -143,6 +151,8 @@ class Decoder(nn.Module):
                                      weighted_encoder_rep,
                                      embedded), dim = 1))
 
+        if return_attn:
+            return output, decoder_hidden.squeeze(0), attn
         return output, decoder_hidden.squeeze(0)
 
 
