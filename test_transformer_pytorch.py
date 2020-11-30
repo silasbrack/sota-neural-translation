@@ -72,7 +72,6 @@ def translate_sentence(model, sentence, german, english, device, max_length=50, 
         return translated_sentence[1:], best_guesses
     return translated_sentence[1:]
 
-
 def plot_heatmap(src, trg, scores):
     import matplotlib.pyplot as plt
     import numpy as np
@@ -93,7 +92,6 @@ def plot_heatmap(src, trg, scores):
 
     plt.colorbar(heatmap)
     plt.show()
-
 
 def plot_attention(model, sentence, german, english, device, max_length=50):
     import spacy
@@ -131,6 +129,22 @@ def plot_attention(model, sentence, german, english, device, max_length=50):
     translated_sentence = [english.vocab.itos[idx] for idx in outputs]
     attention = np.array(attention_matrix)
     plot_heatmap(translated_sentence[1:], tokens[1:], attention)
+
+def bleu(data, model, german, english, device):
+    targets = []
+    outputs = []
+
+    for example in data:
+        src = vars(example)["src"]
+        trg = vars(example)["trg"]
+
+        prediction = translate_sentence(model, src, german, english, device)
+        prediction = prediction[:-1] if prediction[-1] == "<eos>" else prediction  # remove <eos> token
+
+        targets.append([trg])
+        outputs.append(prediction)
+
+    return bleu_score(outputs, targets)
 
 def evaluate_bleu(model: nn.Module,iterator: BucketIterator):
 
@@ -185,6 +199,8 @@ def evaluate(model: nn.Module,
 
         for _, batch in enumerate(iterator):
 
+            # src = batch['src'].to(device)
+            # trg = batch['trg'].to(device)
             src = batch.src
             trg = batch.trg
 
@@ -199,7 +215,6 @@ def evaluate(model: nn.Module,
 
     return epoch_loss / len(iterator)
 
-
 SRC = Field(tokenize = "spacy",
             tokenizer_language="de_core_news_sm",
             init_token = '<sos>',
@@ -212,15 +227,15 @@ TRG = Field(tokenize = "spacy",
             eos_token = '<eos>',
             lower = True)
 
-train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
-# train_data, valid_data, test_data = WMT14.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
+# train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
+train_data, valid_data, test_data = WMT14.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
 
 SRC.build_vocab(train_data, min_freq = 2)
 TRG.build_vocab(train_data, min_freq = 2)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-BATCH_SIZE = 128
+BATCH_SIZE = 32
 
 valid_iterator, test_iterator = BucketIterator.splits(
     (valid_data, test_data),
@@ -234,37 +249,24 @@ criterion = nn.CrossEntropyLoss()
 
 test_loss = evaluate(model, test_iterator, criterion)
 best_epoch, best_loss = a['epoch'], a['best_loss']
-# test_bleu = bleu(test_data, model, SRC, TRG, device)
 
 print(f'| Best epoch: {best_epoch}    | Best loss: {best_loss:.3f}  |')
 print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} |')
-# print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} | Test BLEU : {test_bleu:.3f} |')
 
-def bleu(data, model, german, english, device):
-    targets = []
-    outputs = []
+test_bleu = bleu(test_data, model, SRC, TRG, device)
+print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} | Test BLEU : {test_bleu:.3f} |')
 
-    for example in data:
-        src = vars(example)["src"]
-        trg = vars(example)["trg"]
 
-        prediction = translate_sentence(model, src, german, english, device)
-        prediction = prediction[:-1] if prediction[-1] == "<eos>" else prediction  # remove <eos> token
 
-        targets.append([trg])
-        outputs.append(prediction)
+# sentence = "ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster"
+# real_translation = "a man in a blue shirt is standing on a ladder and cleaning a window"
+# # sentence = "ein frau mit einem orangefarbenen hut, der etwas anstarrt."
+# # real_translation = "a woman in an orange hat staring at something."
+# translated_sentence, best_guesses = translate_sentence(model, sentence, SRC, TRG, device, max_length=50, multiple_guesses=10)
 
-    return bleu_score(outputs, targets)
+# print(f"Translated example sentence: \n {' '.join(translated_sentence)}")
+# print(f"Real example sentence: \n {real_translation}")
 
-sentence = "ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster"
-real_translation = "a man in a blue shirt is standing on a ladder and cleaning a window"
-# sentence = "ein frau mit einem orangefarbenen hut, der etwas anstarrt."
-# real_translation = "a woman in an orange hat staring at something."
-translated_sentence, best_guesses = translate_sentence(model, sentence, SRC, TRG, device, max_length=50, multiple_guesses=10)
+# plot_attention(model, sentence, SRC, TRG, device, max_length=50)
 
-print(f"Translated example sentence: \n {' '.join(translated_sentence)}")
-print(f"Real example sentence: \n {real_translation}")
-
-plot_attention(model, sentence, SRC, TRG, device, max_length=50)
-
-plot_most_likely_words(best_guesses)
+# plot_most_likely_words(best_guesses)
