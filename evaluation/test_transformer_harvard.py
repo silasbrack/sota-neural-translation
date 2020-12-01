@@ -99,34 +99,41 @@ train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'),fields
 SRC.build_vocab(train_data.src, min_freq=2)
 TRG.build_vocab(train_data.trg, min_freq=2)
 
-dataset = load_dataset('wmt14', 'de-en', 'test')['test']['translation']
-trainloader = DataLoader(dataset, batch_size=16, shuffle=True)
-
 INPUT_DIM = len(SRC.vocab)
 OUTPUT_DIM = len(TRG.vocab)
-
 
 model = h.make_model(INPUT_DIM, OUTPUT_DIM, N=6).to(device)
 model.load_state_dict(torch.load("sota-neural-translation\\harvard_transformer.pt"))
 
+dataset = load_dataset('wmt14', 'de-en', 'test')['test']['translation']
+trainloader = DataLoader(dataset, batch_size=16, shuffle=True)
+
+model.eval()
+
+candidate = []
+reference = []
 for val in trainloader:
     de=val['de']
     en=val['en']
 
     de_tokens = [SRC.preprocess(sentence) for sentence in de]
     en_tokens = [TRG.preprocess(sentence) for sentence in en]
-    srcs = SRC.process(de_tokens).to(device)
+    src = SRC.process(de_tokens).to(device).T[:1]
+    trg = TRG.process(en_tokens).to(device).T[:1]
+    src_mask = (src != SRC.vocab.stoi["<pad>"]).unsqueeze(-2)
+    out = greedy_decode(model, src, src_mask, max_len=60, start_symbol=TRG.vocab.stoi["<sos>"])
 
-    out_tokens = []
-    for src in srcs:
-        src = src.unsqueeze(0)
-        src_mask = (src != SRC.vocab.stoi["<pad>"]).unsqueeze(-2).to(device)
-        out = greedy_decode(model, src, src_mask, max_len=60, start_symbol=TRG.vocab.stoi["<sos>"])
-        
-        word = []
-        for i in range(1, out.size(1)):
-            sym = TRG.vocab.itos[out[0, i]]
-            if sym == "<eos>":
-                break
-            word.append(sym)
-        out_tokens.append(word)
+    translation = []
+    for i in range(1, out.size(1)):
+        sym = TRG.vocab.itos[out[0, i]]
+        if sym == "<eos>": break
+        translation.append(sym)
+    target = []
+    for i in range(1, trg.size(1)):
+        sym = TRG.vocab.itos[trg[0, i]]
+        if sym == "<eos>": break
+        target.append(sym)
+    candidate.append(translation)
+    reference.append([target])
+
+print(bleu(candidate, reference))

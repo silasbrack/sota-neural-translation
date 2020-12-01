@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import math
 import numpy as np
+from models.transformer_pytorch import make_model
 # import seaborn as sns
 # sns.set_palette(sns.color_palette("hls", 8))
 # sns.set_context(context="poster")
@@ -22,14 +23,13 @@ def plot_most_likely_words(most_likely_words):
     sentence_length = len(most_likely_words)
     cols = 2
     rows = int(np.ceil(sentence_length / cols))
-    fig = plt.figure()
+    fig = plt.figure(figsize=(12,16))
     for i in range(sentence_length):
         probabilities, words = most_likely_words[i]
         plt.subplot(rows,cols,i+1)
         plt.bar(words, probabilities.cpu())
         plt.yticks([0.,0.2,0.4,0.6,0.8,1.])
-        # axs[i].set_yticks([0.,0.2,0.4,0.6,0.8,1.])
-    # fig.tight_layout()
+    plt.tight_layout()
     plt.show()
 
 def translate_sentence(model, sentence, german, english, device, max_length=50, multiple_guesses=0):
@@ -227,8 +227,8 @@ TRG = Field(tokenize = "spacy",
             eos_token = '<eos>',
             lower = True)
 
-# train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
-train_data, valid_data, test_data = WMT14.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
+train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
+# _, _, test_data = WMT14.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
 
 SRC.build_vocab(train_data, min_freq = 2)
 TRG.build_vocab(train_data, min_freq = 2)
@@ -237,36 +237,44 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 BATCH_SIZE = 32
 
-valid_iterator, test_iterator = BucketIterator.splits(
-    (valid_data, test_data),
+train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
+    (train_data, valid_data, test_data),
     batch_size = BATCH_SIZE,
     device = device)
 
-a = torch.load('transformer.pt', map_location=device)
-model = a['model']
+
+INPUT_DIM = len(SRC.vocab)
+OUTPUT_DIM = len(TRG.vocab)
+
+ENC_EMB_DIM = 256
+DEC_EMB_DIM = 256
+ENC_HID_DIM = 512
+DEC_HID_DIM = 512
+ENC_DROPOUT = 0.5
+DEC_DROPOUT = 0.5
+ATTN_DIM = 64
+args = (INPUT_DIM,OUTPUT_DIM,ENC_EMB_DIM,DEC_EMB_DIM,ENC_HID_DIM,DEC_HID_DIM,ENC_DROPOUT,DEC_DROPOUT,ATTN_DIM)
+kwargs = {"device" : device}
+
+model = make_model(*args, **kwargs).to(device)
+model_name = "torch_Seq2Seq"
+state = torch.load(model_name + ".pt", map_location=device)
+model.load_state_dict(state["state_dict"])
 
 criterion = nn.CrossEntropyLoss()
 
-test_loss = evaluate(model, test_iterator, criterion)
-best_epoch, best_loss = a['epoch'], a['best_loss']
+# test_bleu = bleu(test_data, model, SRC, TRG, device)
+# print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} | Test BLEU : {test_bleu:.3f} |') # 27
 
-print(f'| Best epoch: {best_epoch}    | Best loss: {best_loss:.3f}  |')
-print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} |')
+sentence = "ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster ."
+real_translation = "a man in a blue shirt is standing on a ladder and cleaning a window ."
+# sentence = "ein frau mit einem orangefarbenen hut, der etwas anstarrt."
+# real_translation = "a woman in an orange hat staring at something."
+translated_sentence, best_guesses = translate_sentence(model, sentence, SRC, TRG, device, max_length=50, multiple_guesses=10)
 
-test_bleu = bleu(test_data, model, SRC, TRG, device)
-print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} | Test BLEU : {test_bleu:.3f} |')
+print(f"Translated example sentence: \n {' '.join(translated_sentence)}")
+print(f"Real example sentence: \n {real_translation}")
 
+plot_attention(model, sentence, SRC, TRG, device, max_length=50)
 
-
-# sentence = "ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster"
-# real_translation = "a man in a blue shirt is standing on a ladder and cleaning a window"
-# # sentence = "ein frau mit einem orangefarbenen hut, der etwas anstarrt."
-# # real_translation = "a woman in an orange hat staring at something."
-# translated_sentence, best_guesses = translate_sentence(model, sentence, SRC, TRG, device, max_length=50, multiple_guesses=10)
-
-# print(f"Translated example sentence: \n {' '.join(translated_sentence)}")
-# print(f"Real example sentence: \n {real_translation}")
-
-# plot_attention(model, sentence, SRC, TRG, device, max_length=50)
-
-# plot_most_likely_words(best_guesses)
+plot_most_likely_words(best_guesses)

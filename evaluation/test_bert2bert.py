@@ -8,7 +8,7 @@ import numpy as np
 device = torch.device("cuda")
 
 dataset = load_dataset('wmt14', 'de-en')
-trainloader = DataLoader(dataset['train'], batch_size=16, shuffle=True)
+trainloader = DataLoader(dataset['test'], batch_size=16, shuffle=True)
 
 # encoded = dataset_test.map(lambda example: tokenizer1([example["translation"]["en"],example["translation"]["de"]],truncation=True, padding='max_length'))
 
@@ -45,7 +45,8 @@ for val in trainloader:
 
     n += len(de)
     print(n)
+    print(bleu(candidate, reference))
 
-bs = bleu(candidate,reference)
+bs = bleu(candidate_corpus,reference_corpus)
 print(bs)
 

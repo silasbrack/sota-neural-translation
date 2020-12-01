@@ -191,3 +191,20 @@ class Seq2Seq(nn.Module):
             output = (trg[t] if teacher_force else top1)
 
         return outputs
+
+def init_weights(m: nn.Module):
+    for name, param in m.named_parameters():
+        if 'weight' in name:
+            nn.init.normal_(param.data, mean=0, std=0.01)
+        else:
+            nn.init.constant_(param.data, 0)
+
+def make_model(INPUT_DIM, OUTPUT_DIM, ENC_EMB_DIM, DEC_EMB_DIM, ENC_HID_DIM, DEC_HID_DIM, ENC_DROPOUT, DEC_DROPOUT, ATTN_DIM, device):
+    "Helper: Construct a model from hyperparameters."
+    enc = Encoder(INPUT_DIM, ENC_EMB_DIM, ENC_HID_DIM, DEC_HID_DIM, ENC_DROPOUT)
+    attn = Attention(ENC_HID_DIM, DEC_HID_DIM, ATTN_DIM)
+    dec = Decoder(OUTPUT_DIM, DEC_EMB_DIM, ENC_HID_DIM, DEC_HID_DIM, DEC_DROPOUT, attn)
+    model = Seq2Seq(enc, dec, device)
+    
+    model.apply(init_weights)
+    return model

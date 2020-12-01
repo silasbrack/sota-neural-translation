@@ -10,3 +10,4 @@ def perplexity(output, target):
 
 def bleu(output, target):
     return bleu_score(output, target)
+    
