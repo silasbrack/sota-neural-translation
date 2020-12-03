@@ -8,6 +8,7 @@ import torch.nn as nn
 import math
 import numpy as np
 from models.transformer_pytorch import make_model
+from utils import plot_training_curve, plot_loss_curves
 # import seaborn as sns
 # sns.set_palette(sns.color_palette("hls", 8))
 # sns.set_context(context="poster")
@@ -275,6 +276,11 @@ translated_sentence, best_guesses = translate_sentence(model, sentence, SRC, TRG
 print(f"Translated example sentence: \n {' '.join(translated_sentence)}")
 print(f"Real example sentence: \n {real_translation}")
 
-plot_attention(model, sentence, SRC, TRG, device, max_length=50)
+plot_loss_curves(state["loss"]["train"], state["loss"]["val"])
+# plot_training_curve(state["loss"]["train"], 32)
+# plot_training_curve(state["loss"]["val"], 1)
 
-plot_most_likely_words(best_guesses)
+# plot_attention(model, sentence, SRC, TRG, device, max_length=50)
+
+# plot_most_likely_words(best_guesses)
+

@@ -19,6 +19,7 @@ from torch import Tensor
 import sys
 sys.path.append("./")
 import models.harvard_transformer as h
+from evaluation.utils import plot_training_curve
 
 class Batch:
     "Object for holding a batch of data with mask during training."
@@ -214,24 +215,32 @@ def save_model(name, model):
 def save_losses(name, d):
     torch.save(d, name)
 
-def plot_training_curve(losses):
-    loss = losses["train"]
-    loss_flat = [batch for epoch in loss for batch in epoch]
-
-    N = 64
-    cumsum, moving_aves = [0], []
-    for i, x in enumerate(loss_flat, 1):
-        cumsum.append(cumsum[i-1] + x)
-        if i>=N:
-            moving_ave = (cumsum[i] - cumsum[i-N])/N
-            moving_aves.append(moving_ave)
-
-    plt.plot(moving_aves)
-    plt.ylabel("Cross-entropy loss")
-    plt.xticks(np.cumsum([len(epoch) for epoch in loss]), range(1, len(loss)+1))
-    plt.xlabel("Epoch")
-    plt.tight_layout
-    plt.show()
+def visualise_attention(tgt_sent, sent):
+    def draw(data, x, y, ax):
+        seaborn.heatmap(data, 
+                    xticklabels=x, square=True, yticklabels=y, vmin=0.0, vmax=1.0, 
+                    cbar=False, ax=ax)
+    for layer in range(1, 6, 2):
+        fig, axs = plt.subplots(1,4, figsize=(16, 8))
+        print("Encoder Layer", layer+1)
+        for h in range(4):
+            draw(model.encoder.layers[layer].self_attn.attn[0, h].data.cpu(), 
+                sent, sent if h ==0 else [], ax=axs[h])
+        plt.show()
+        
+    for layer in range(1, 6, 2):
+        fig, axs = plt.subplots(1,4, figsize=(16, 8))
+        print("Decoder Self Layer", layer+1)
+        for h in range(4):
+            draw(model.decoder.layers[layer].self_attn.attn[0, h].data[:len(tgt_sent), :len(tgt_sent)].cpu(), 
+                tgt_sent, tgt_sent if h ==0 else [], ax=axs[h])
+        plt.show()
+        print("Decoder Src Layer", layer+1)
+        fig, axs = plt.subplots(1,4, figsize=(16, 8))
+        for h in range(4):
+            draw(model.decoder.layers[layer].self_attn.attn[0, h].data[:len(tgt_sent), :len(sent)].cpu(), 
+                sent, tgt_sent if h ==0 else [], ax=axs[h])
+        plt.show()
 
 
 
@@ -281,12 +290,12 @@ criterion_train = nn.CrossEntropyLoss(ignore_index=pad_idx) # LabelSmoothing(siz
 criterion_val = nn.CrossEntropyLoss(ignore_index=pad_idx)
 criterion_test = nn.CrossEntropyLoss(ignore_index=pad_idx)
 
-TO_TRAIN = True
+TO_TRAIN = False
 if TO_TRAIN:
     model_opt = NoamOpt(model.src_embed[0].d_model, 1, 2000,
             torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
 
-    NUM_EPOCHS = 10
+    NUM_EPOCHS = 100
     losses =  {"train": [], "val": [], "test": []}
     min_val_loss = float("inf")
     for epoch in range(NUM_EPOCHS):
@@ -333,64 +342,37 @@ else:
     print(translation)
     print(real_translation)
 
-    plot_training_curve(losses)
+    plot_training_curve(losses["train"])
+    plot_training_curve(losses["val"])
+    
+    visualise_attention(translation, real_translation)
 
-    # candidate = []
-    # reference = []
-    # for i, batch in enumerate(test_iter):
-    #     src = batch.src.transpose(0, 1)[:1]
-    #     src_mask = (src != SRC.vocab.stoi["<pad>"]).unsqueeze(-2)
-    #     out = greedy_decode(model, src, src_mask, max_len=60, start_symbol=TRG.vocab.stoi["<sos>"])
+    candidate = []
+    reference = []
+    for i, batch in enumerate(test_iter):
+        src = batch.src.transpose(0, 1)[:1]
+        src_mask = (src != SRC.vocab.stoi["<pad>"]).unsqueeze(-2)
+        out = greedy_decode(model, src, src_mask, max_len=60, start_symbol=TRG.vocab.stoi["<sos>"])
 
-    #     translation = []
-    #     for i in range(1, out.size(1)):
-    #         sym = TRG.vocab.itos[out[0, i]]
-    #         if sym == "<eos>": break
-    #         translation.append(sym)
-    #     print("Translation: \t", ' '.join(translation))
-    #     target = []
-    #     for i in range(1, batch.trg.size(0)):
-    #         sym = TRG.vocab.itos[batch.trg.data[i, 0]]
-    #         if sym == "<eos>": break
-    #         target.append(sym)
-    #     print("Target: \t", ' '.join(target))
-    #     print()
+        translation = []
+        for i in range(1, out.size(1)):
+            sym = TRG.vocab.itos[out[0, i]]
+            if sym == "<eos>": break
+            translation.append(sym)
+        print("Translation: \t", ' '.join(translation))
+        target = []
+        for i in range(1, batch.trg.size(0)):
+            sym = TRG.vocab.itos[batch.trg.data[i, 0]]
+            if sym == "<eos>": break
+            target.append(sym)
+        print("Target: \t", ' '.join(target))
+        print()
 
-    #     candidate.append(translation)
-    #     reference.append([target])
+        candidate.append(translation)
+        reference.append([target])
 
-    # bleu = bleu_score(candidate, reference)
-    # print(bleu)
+    bleu = bleu_score(candidate, reference)
+    print(bleu)
     # state["bleu"] = bleu
     # save_model_state("harvard_transformer2_state.pt", model, {"args" : args, "kwargs" : kwargs}, epoch+1, state["loss"], state["bleu"])
-
-
-# def draw(data, x, y, ax):
-#     seaborn.heatmap(data, 
-#                     xticklabels=x, square=True, yticklabels=y, vmin=0.0, vmax=1.0, 
-#                     cbar=False, ax=ax)
-# def visualise_attention(trans):
-#     tgt_sent = trans.split()
-
-#     for layer in range(1, 6, 2):
-#         fig, axs = plt.subplots(1,4, figsize=(20, 10))
-#         print("Encoder Layer", layer+1)
-#         for h in range(4):
-#             draw(model.encoder.layers[layer].self_attn.attn[0, h].data, 
-#                 sent, sent if h ==0 else [], ax=axs[h])
-#         plt.show()
-        
-#     for layer in range(1, 6, 2):
-#         fig, axs = plt.subplots(1,4, figsize=(20, 10))
-#         print("Decoder Self Layer", layer+1)
-#         for h in range(4):
-#             draw(model.decoder.layers[layer].self_attn.attn[0, h].data[:len(tgt_sent), :len(tgt_sent)], 
-#                 tgt_sent, tgt_sent if h ==0 else [], ax=axs[h])
-#         plt.show()
-#         print("Decoder Src Layer", layer+1)
-#         fig, axs = plt.subplots(1,4, figsize=(20, 10))
-#         for h in range(4):
-#             draw(model.decoder.layers[layer].self_attn.attn[0, h].data[:len(tgt_sent), :len(sent)], 
-#                 sent, tgt_sent if h ==0 else [], ax=axs[h])
-#         plt.show()
 
