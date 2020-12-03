@@ -212,13 +212,12 @@ test_loss = torch.tensor(sum(test_losses) / len(test_losses))
 print(test_loss)
 print('Perplexity:', torch.exp(test_loss))
 
-model.eval()
-
 sentence = [SRC.preprocess("ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster")]
 real_translation = TRG.preprocess("a man in a blue shirt is standing on a ladder and cleaning a window")
 
 src = SRC.process(sentence).to(device).T
 src_mask = (src != SRC.vocab.stoi["<pad>"]).unsqueeze(-2)
+model.eval()
 out = greedy_decode(model, src, src_mask, max_len=60, start_symbol=TRG.vocab.stoi["<sos>"])
 translation = []
 for i in range(1, out.size(1)):
@@ -230,36 +229,37 @@ print(real_translation)
 
 # plot_loss_curves(losses["train"], losses["val"])
 
-visualise_attention(translation, real_translation)
+# visualise_attention(translation, real_translation)
 
-candidate = []
-reference = []
-for i, batch in enumerate(test_iter):
-    src = batch.src.transpose(0, 1)[:1]
-    src_mask = (src != SRC.vocab.stoi["<pad>"]).unsqueeze(-2)
-    out = greedy_decode(model, src, src_mask, max_len=60, start_symbol=TRG.vocab.stoi["<sos>"])
+# candidate = []
+# reference = []
+# for i, batch in enumerate(test_iter):
+#     src = batch.src.transpose(0, 1)[:1]
+#     src_mask = (src != SRC.vocab.stoi["<pad>"]).unsqueeze(-2)
+#     model.eval()
+#     out = greedy_decode(model, src, src_mask, max_len=60, start_symbol=TRG.vocab.stoi["<sos>"])
 
-    translation = []
-    for i in range(1, out.size(1)):
-        sym = TRG.vocab.itos[out[0, i]]
-        if sym == "<eos>": break
-        translation.append(sym)
-    print("Translation: \t", ' '.join(translation))
-    target = []
-    for i in range(1, batch.trg.size(0)):
-        sym = TRG.vocab.itos[batch.trg.data[i, 0]]
-        if sym == "<eos>": break
-        target.append(sym)
-    print("Target: \t", ' '.join(target))
-    print()
+#     translation = []
+#     for i in range(1, out.size(1)):
+#         sym = TRG.vocab.itos[out[0, i]]
+#         if sym == "<eos>": break
+#         translation.append(sym)
+#     print("Translation: \t", ' '.join(translation))
+#     target = []
+#     for i in range(1, batch.trg.size(0)):
+#         sym = TRG.vocab.itos[batch.trg.data[i, 0]]
+#         if sym == "<eos>": break
+#         target.append(sym)
+#     print("Target: \t", ' '.join(target))
+#     print()
 
-    candidate.append(translation)
-    reference.append([target])
+#     candidate.append(translation)
+#     reference.append([target])
 
-score = bleu(candidate, reference)
-print(score)
-    # state["bleu"] = bleu
-    # save_model_state("harvard_transformer2_state.pt", model, {"args" : args, "kwargs" : kwargs}, epoch+1, state["loss"], state["bleu"])
+# score = bleu(candidate, reference)
+# print(score)
+# # state["bleu"] = bleu
+# # save_model_state("harvard_transformer2_state.pt", model, {"args" : args, "kwargs" : kwargs}, epoch+1, state["loss"], state["bleu"])
 
 
 # dataset = load_dataset('wmt14', 'de-en', 'test')['test']['translation']

@@ -36,6 +36,7 @@ def plot_most_likely_words(most_likely_words):
 def translate_sentence(model, sentence, german, english, device, max_length=50, multiple_guesses=0):
     import spacy
     spacy_ger = spacy.load("de_core_news_sm")
+    model.eval()
 
     if type(sentence) == str:
         tokens = [token.text.lower() for token in spacy_ger(sentence)]
@@ -276,7 +277,7 @@ translated_sentence, best_guesses = translate_sentence(model, sentence, SRC, TRG
 print(f"Translated example sentence: \n {' '.join(translated_sentence)}")
 print(f"Real example sentence: \n {real_translation}")
 
-plot_loss_curves(state["loss"]["train"], state["loss"]["val"])
+# plot_loss_curves(state["loss"]["train"], state["loss"]["val"])
 # plot_training_curve(state["loss"]["train"], 32)
 # plot_training_curve(state["loss"]["val"], 1)
 
