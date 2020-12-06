@@ -18,7 +18,7 @@ import torch.nn.functional as F
 from torch import Tensor
 import sys
 sys.path.append("./")
-import models.harvard_transformer as h
+import models.transformer as h
 from evaluation.utils import plot_training_curve
 
 class Batch:

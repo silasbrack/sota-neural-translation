@@ -230,7 +230,7 @@ TRG = Field(tokenize = "spacy",
             lower = True)
 
 train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
-# _, _, test_data = WMT14.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
+_, _, test_data_wmt14 = WMT14.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
 
 SRC.build_vocab(train_data, min_freq = 2)
 TRG.build_vocab(train_data, min_freq = 2)
@@ -239,11 +239,10 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 BATCH_SIZE = 32
 
-train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
-    (train_data, valid_data, test_data),
-    batch_size = BATCH_SIZE,
-    device = device)
-
+# train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
+#     (train_data, valid_data, test_data),
+#     batch_size = BATCH_SIZE,
+#     device = device)
 
 INPUT_DIM = len(SRC.vocab)
 OUTPUT_DIM = len(TRG.vocab)
@@ -265,17 +264,17 @@ model.load_state_dict(state["state_dict"])
 
 criterion = nn.CrossEntropyLoss()
 
+test_bleu = bleu(test_data_wmt14, model, SRC, TRG, device)
+print(test_bleu)
 # test_bleu = bleu(test_data, model, SRC, TRG, device)
 # print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} | Test BLEU : {test_bleu:.3f} |') # 27
 
-sentence = "ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster ."
-real_translation = "a man in a blue shirt is standing on a ladder and cleaning a window ."
-# sentence = "ein frau mit einem orangefarbenen hut, der etwas anstarrt."
-# real_translation = "a woman in an orange hat staring at something."
-translated_sentence, best_guesses = translate_sentence(model, sentence, SRC, TRG, device, max_length=50, multiple_guesses=10)
+# sentence = "ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster ."
+# real_translation = "a man in a blue shirt is standing on a ladder and cleaning a window ."
+# translated_sentence, best_guesses = translate_sentence(model, sentence, SRC, TRG, device, max_length=50, multiple_guesses=10)
 
-print(f"Translated example sentence: \n {' '.join(translated_sentence)}")
-print(f"Real example sentence: \n {real_translation}")
+# print(f"Translated example sentence: \n {' '.join(translated_sentence)}")
+# print(f"Real example sentence: \n {real_translation}")
 
 # plot_loss_curves(state["loss"]["train"], state["loss"]["val"])
 # plot_training_curve(state["loss"]["train"], 32)

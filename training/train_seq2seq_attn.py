@@ -15,7 +15,7 @@ import torch.nn.functional as F
 from torch import Tensor
 import sys
 sys.path.append("./")
-from models.transformer_pytorch import make_model
+from models.seq2seq_attn import make_model
 import math
 import time
 

@@ -4,7 +4,7 @@ from torchtext.datasets import Multi30k
 from torchtext.data import Field
 from torchtext import data
 import pickle
-import models.harvard_transformer as h
+import models.transformer as h
 import torch
 from datasets import load_dataset
 from torch.utils.data import DataLoader
@@ -229,7 +229,7 @@ print(real_translation)
 
 # plot_loss_curves(losses["train"], losses["val"])
 
-# visualise_attention(translation, real_translation)
+visualise_attention(translation, sentence[0])
 
 # candidate = []
 # reference = []
@@ -263,7 +263,7 @@ print(real_translation)
 
 
 # dataset = load_dataset('wmt14', 'de-en', 'test')['test']['translation']
-# trainloader = DataLoader(dataset, batch_size=16, shuffle=True)
+# trainloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
 # model.eval()
 
