@@ -90,26 +90,28 @@ def visualise_attention(tgt_sent, sent):
         seaborn.heatmap(data, 
                     xticklabels=x, square=True, yticklabels=y, vmin=0.0, vmax=1.0, 
                     cbar=False, ax=ax)
+        # bottom, top = ax.get_ylim()
+        # ax.set_ylim(bottom + 0.5, top - 0.5)
     for layer in range(1, 6, 2):
-        fig, axs = plt.subplots(1,4, figsize=(16, 6))
+        fig, axs = plt.subplots(1,4, figsize=(16, 5))
         print("Encoder Layer", layer+1)
         for h in range(4):
-            draw(model.encoder.layers[layer].self_attn.attn[0, h].data.cpu(), 
-                sent, sent if h ==0 else [], ax=axs[h])
+            vals = model.encoder.layers[layer].self_attn.attn[0, h].data.cpu()
+            draw(vals, sent, sent if h ==0 else [], ax=axs[h])
         plt.show()
         
     for layer in range(1, 6, 2):
-        fig, axs = plt.subplots(1,4, figsize=(16, 6))
+        fig, axs = plt.subplots(1,4, figsize=(16, 5))
         print("Decoder Self Layer", layer+1)
         for h in range(4):
-            draw(model.decoder.layers[layer].self_attn.attn[0, h].data[:len(tgt_sent), :len(tgt_sent)].cpu(), 
-                tgt_sent, tgt_sent if h ==0 else [], ax=axs[h])
+            vals = model.decoder.layers[layer].self_attn.attn[0, h].data[:len(tgt_sent), :len(tgt_sent)].cpu()
+            draw(vals, tgt_sent, tgt_sent if h ==0 else [], ax=axs[h])
         plt.show()
         print("Decoder Src Layer", layer+1)
-        fig, axs = plt.subplots(1,4, figsize=(16, 6))
+        fig, axs = plt.subplots(1,4, figsize=(16, 5))
         for h in range(4):
-            draw(model.decoder.layers[layer].self_attn.attn[0, h].data[:len(tgt_sent), :len(sent)].cpu(), 
-                sent, tgt_sent if h ==0 else [], ax=axs[h])
+            vals = model.decoder.layers[layer].self_attn.attn[0, h].data[:len(tgt_sent), :len(sent)].cpu()
+            draw(vals, sent, tgt_sent if h ==0 else [], ax=axs[h])
         plt.show()
 class SimpleLossCompute:
     "A simple loss compute and train function."
@@ -212,24 +214,27 @@ test_loss = torch.tensor(sum(test_losses) / len(test_losses))
 print(test_loss)
 print('Perplexity:', torch.exp(test_loss))
 
-sentence = [SRC.preprocess("ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster")]
-real_translation = TRG.preprocess("a man in a blue shirt is standing on a ladder and cleaning a window")
+# sentence = [SRC.preprocess("eine gruppe von menschen steht vor einem iglu .")]
+# real_translation = TRG.preprocess("a man in a blue shirt is standing on a ladder and cleaning a window")
+sentence = [SRC.preprocess("eine gruppe von menschen steht vor einem iglu .")]
+real_translation = TRG.preprocess("a group of people stands in front of an igloo.")
 
 src = SRC.process(sentence).to(device).T
 src_mask = (src != SRC.vocab.stoi["<pad>"]).unsqueeze(-2)
 model.eval()
 out = greedy_decode(model, src, src_mask, max_len=60, start_symbol=TRG.vocab.stoi["<sos>"])
-translation = []
+translation = ["<sos>"]
 for i in range(1, out.size(1)):
     sym = TRG.vocab.itos[out[0, i]]
-    if sym == "<eos>": break
     translation.append(sym)
-print(translation)
-print(real_translation)
+    if sym == "<eos>":
+        break
+print(' '.join(translation))
+print(' '.join(real_translation))
 
 # plot_loss_curves(losses["train"], losses["val"])
 
-visualise_attention(translation, sentence[0])
+visualise_attention(translation, ["<sos>"] + sentence[0] + ["<eos>"])
 
 # candidate = []
 # reference = []

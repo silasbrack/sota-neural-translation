@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import math
 import numpy as np
-from models.transformer_pytorch import make_model
+from models.seq2seq_attn import make_model
 from utils import plot_training_curve, plot_loss_curves
 # import seaborn as sns
 # sns.set_palette(sns.color_palette("hls", 8))
@@ -120,17 +120,20 @@ def plot_attention(model, sentence, german, english, device, max_length=50):
 
         with torch.no_grad():
             output, hidden, attn = model.decoder(previous_word, hidden, encoder_outputs, return_attn=True)
-            attention_matrix.append(attn.cpu().numpy()[1:])
             best_guess = output.argmax(1).item()
+            # print(english.vocab.itos[best_guess])
+            # print(attn*100)
 
         outputs.append(best_guess)
+        attention_matrix.append(attn.cpu().numpy())
 
         # Model predicts it's the end of the sentence
         if output.argmax(1).item() == english.vocab.stoi["<eos>"]:
             break
-    translated_sentence = [english.vocab.itos[idx] for idx in outputs]
+
+    translated_sentence = [english.vocab.itos[idx] for idx in outputs[1:]]
     attention = np.array(attention_matrix)
-    plot_heatmap(translated_sentence[1:], tokens[1:], attention)
+    plot_heatmap(translated_sentence, tokens, attention)
 
 def bleu(data, model, german, english, device):
     targets = []
@@ -230,7 +233,11 @@ TRG = Field(tokenize = "spacy",
             lower = True)
 
 train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
-_, _, test_data_wmt14 = WMT14.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
+# _, _, test_data_wmt14 = WMT14.splits(exts = ('.de', '.en'), fields = (SRC, TRG))
+
+# for _,a in enumerate(test_data):
+#     print(' '.join(a.src))
+#     print(' '.join(a.trg))
 
 SRC.build_vocab(train_data, min_freq = 2)
 TRG.build_vocab(train_data, min_freq = 2)
@@ -264,17 +271,17 @@ model.load_state_dict(state["state_dict"])
 
 criterion = nn.CrossEntropyLoss()
 
-test_bleu = bleu(test_data_wmt14, model, SRC, TRG, device)
-print(test_bleu)
+# test_bleu = bleu(test_data_wmt14, model, SRC, TRG, device)
+# print(test_bleu)
 # test_bleu = bleu(test_data, model, SRC, TRG, device)
 # print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} | Test BLEU : {test_bleu:.3f} |') # 27
 
-# sentence = "ein mann in einem blauen hemd steht auf einer leiter und putzt ein fenster ."
-# real_translation = "a man in a blue shirt is standing on a ladder and cleaning a window ."
-# translated_sentence, best_guesses = translate_sentence(model, sentence, SRC, TRG, device, max_length=50, multiple_guesses=10)
+sentence = "eine gruppe von menschen steht vor einem iglu ."
+real_translation = "a group of people stands in front of an igloo ."
+translated_sentence, best_guesses = translate_sentence(model, sentence, SRC, TRG, device, max_length=50, multiple_guesses=10)
 
-# print(f"Translated example sentence: \n {' '.join(translated_sentence)}")
-# print(f"Real example sentence: \n {real_translation}")
+print(f"Translated example sentence: \n {' '.join(translated_sentence)}")
+print(f"Real example sentence: \n {' '.join(TRG.preprocess(real_translation))}")
 
 # plot_loss_curves(state["loss"]["train"], state["loss"]["val"])
 # plot_training_curve(state["loss"]["train"], 32)
