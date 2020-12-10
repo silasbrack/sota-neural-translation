@@ -275,9 +275,11 @@ criterion = nn.CrossEntropyLoss()
 # print(test_bleu)
 # test_bleu = bleu(test_data, model, SRC, TRG, device)
 # print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} | Test BLEU : {test_bleu:.3f} |') # 27
-
-sentence = "eine gruppe von menschen steht vor einem iglu ."
-real_translation = "a group of people stands in front of an igloo ."
+model.eval()
+# sentence = "eine gruppe von menschen steht vor einem iglu ."
+# real_translation = "a group of people stands in front of an igloo ."
+sentence = "ein mann mit kariertem hut in einer schwarzen jacke und einer schwarz-weiß gestreiften hose spielt auf einer bühne mit einem sänger und einem weiteren gitarristen im hintergrund auf einer e-gitarre ."
+real_translation = "a man in a black jacket and checkered hat wearing black and white striped pants plays an electric guitar on a stage with a singer and another guitar player in the background ."
 translated_sentence, best_guesses = translate_sentence(model, sentence, SRC, TRG, device, max_length=50, multiple_guesses=10)
 
 print(f"Translated example sentence: \n {' '.join(translated_sentence)}")
