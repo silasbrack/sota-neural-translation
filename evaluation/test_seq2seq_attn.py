@@ -242,6 +242,9 @@ train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'), field
 SRC.build_vocab(train_data, min_freq = 2)
 TRG.build_vocab(train_data, min_freq = 2)
 
+print(len(SRC.vocab))
+print(len(TRG.vocab))
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 BATCH_SIZE = 32

@@ -206,6 +206,8 @@ train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
 INPUT_DIM = len(SRC.vocab)
 OUTPUT_DIM = len(TRG.vocab)
 
+print(INPUT_DIM, OUTPUT_DIM)
+
 ENC_EMB_DIM = 256
 DEC_EMB_DIM = 256
 ENC_HID_DIM = 512
