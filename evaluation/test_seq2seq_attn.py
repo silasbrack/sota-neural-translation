@@ -49,6 +49,7 @@ def translate_sentence(model, sentence, german, english, device, max_length=50, 
 
     # Build encoder hidden, cell state
     with torch.no_grad():
+        print(sentence_tensor.shape)
         encoder_outputs, hidden = model.encoder(sentence_tensor)
 
     outputs = [english.vocab.stoi["<sos>"]]
@@ -58,6 +59,7 @@ def translate_sentence(model, sentence, german, english, device, max_length=50, 
         previous_word = torch.LongTensor([outputs[-1]]).to(device)
 
         with torch.no_grad():
+            print(previous_word, hidden.shape, encoder_outputs.shape)
             output, hidden = model.decoder(previous_word, hidden, encoder_outputs)
             if multiple_guesses > 1:
                 best_guesses.append(get_most_likely_words(multiple_guesses, output.flatten(), english))

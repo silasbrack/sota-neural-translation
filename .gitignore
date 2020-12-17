@@ -6,3 +6,4 @@ runs
 *.pt
 .idea
 bert2bert
+.ipynb_checkpoints
