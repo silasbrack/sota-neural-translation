@@ -12,7 +12,7 @@ from pprint import pprint
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 sys.path.append("./")
-from models.LSTM_baseline import DecoderLSTM, EncoderLSTM, Seq2Seq
+from models.lstm import DecoderLSTM, EncoderLSTM, Seq2Seq
 
 
 
