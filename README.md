@@ -21,7 +21,7 @@
 ---
 
 ###### Seq2Seq LSTM:
-`????`
+"a group  of people standing in  front of a <unk> booth ."
 
 ###### Seq2Seq GRU w/ Attn:
 `a group of people standing in front of a theater .`
