@@ -17,18 +17,18 @@
 `ein mann mit kariertem hut in einer schwarzen jacke und einer schwarz-weiß gestreiften hose spielt auf einer bühne mit einem sänger und einem weiteren gitarristen im hintergrund auf einer e-gitarre .`
 
 ###### Translation:
-`a group of people stands in front of an igloo .` __
+`a group of people stands in front of an igloo .`\
 `a man in a black jacket and checkered hat wearing black and white striped pants plays an electric guitar on a stage with a singer and another guitar player in the background .`
 
 ---
 
 ###### Seq2Seq LSTM:
-`a group  of people standing in  front of a <unk> booth .` __
+`a group  of people standing in  front of a <unk> booth .`\
 `a man in a black hat and black shirt plays a a with a a a a a a a a in a a in a background .`
 
 ###### Seq2Seq GRU w/ Attn:
-`a group of people standing in front of a theater .` __
+`a group of people standing in front of a theater .`\
 `a man in a plaid hat , jacket and black striped striped striped striped striped shirt , playing a guitar with a guitar with a guitar with a guitar in a treadmill .`
 ###### Transformer:
-`a group of people are standing in front of a large building .` __
+`a group of people are standing in front of a large building .`\
 `a man in a white shirt and jeans is playing a guitar ona stage .`
