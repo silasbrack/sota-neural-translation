@@ -31,4 +31,4 @@
 `a man in a plaid hat , jacket and black striped striped striped striped striped shirt , playing a guitar with a guitar with a guitar with a guitar in a treadmill .`
 ###### Transformer:
 `a group of people are standing in front of a large building .`\
-`a man in a white shirt and jeans is playing a guitar ona stage .`
+`a man in a white shirt and jeans is playing a guitar on a stage .`
