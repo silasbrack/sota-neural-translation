@@ -13,7 +13,7 @@
 ---
 
 ###### Original:
-`eine gruppe von menschen steht vor einem iglu .` __
+`eine gruppe von menschen steht vor einem iglu .`\
 `ein mann mit kariertem hut in einer schwarzen jacke und einer schwarz-weiß gestreiften hose spielt auf einer bühne mit einem sänger und einem weiteren gitarristen im hintergrund auf einer e-gitarre .`
 
 ###### Translation:
