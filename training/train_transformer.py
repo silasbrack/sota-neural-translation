@@ -308,7 +308,7 @@ if TO_TRAIN:
         print("Validation loss for epoch", epoch+1, ":", val_loss)
 
         if (val_loss < min_val_loss):
-            save_model_state("harvard_transformer2_state.pt", model, {"args" : args, "kwargs" : kwargs}, epoch+1, losses, None)
+            save_model_state("models/states/harvard_transformer2_state.pt", model, {"args" : args, "kwargs" : kwargs}, epoch+1, losses, None)
 
 else:
     # model.load_state_dict(torch.load("harvard_transformer.pt"))
@@ -316,7 +316,7 @@ else:
     # model.load_state_dict(torch.load("harvard_transformer2.pt"))
     # losses = torch.load("harvard_transformer2_loss.pt")
 
-    state = torch.load("harvard_transformer2_state.pt", map_location=device)
+    state = torch.load("models/states/harvard_transformer2_state.pt", map_location=device)
     model.load_state_dict(state["state_dict"])
     losses = state["loss"]
 

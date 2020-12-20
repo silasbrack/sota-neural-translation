@@ -1,5 +1,13 @@
 # sota-neural-translation
 
+## Introduction
+
+## How to run
+
+The requirements.txt is based on (...)
+
+## Summary of results
+
 |            | Seq2Seq LSTM | Seq2Seq GRU w/Attn | Transformer |
 |------------|--------------|--------------------|-------------|
 | CE Train   | 2.19         | 1.81               | 3.28        |
@@ -12,19 +20,20 @@
 
 ---
 
-###### Original:
-`eine gruppe von menschen steht vor einem iglu .`
+### Translation samples
 
-###### Translation:
-`a group of people stands in front of an igloo .`
+#### Short sentence
 
----
+**Original:** `eine gruppe von menschen steht vor einem iglu .`
+**Translation:** `a group of people stands in front of an igloo .`
+**Seq2Seq LSTM:** `????`
+**Seq2Seq GRU w/ Attn:** `a group of people standing in front of a theater .`
+**Transformer:** `a group of people are standing in front of a large building .`
 
-###### Seq2Seq LSTM:
-`????`
+#### Long sentence
 
-###### Seq2Seq GRU w/ Attn:
-`a group of people standing in front of a theater .`
-
-###### Transformer:
-`a group of people are standing in front of a large building .`
+**Original:** `????`
+**Translation:** `????`
+**Seq2Seq LSTM:** `????`
+**Seq2Seq GRU w/ Attn:** `????`
+**Transformer:** `????`

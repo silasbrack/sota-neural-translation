@@ -262,7 +262,7 @@ if TO_TRAIN:
             best_valid_loss = valid_loss
             best_epoch = epoch
             # checkpoint_and_save('transformer.pt', model, best_valid_loss, epoch, optimizer, valid_loss) 
-            save_model_state(model_name + ".pt", model, None, epoch+1, losses, None)
+            save_model_state("models/states/" + model_name + ".pt", model, None, epoch+1, losses, None)
         if ((epoch - best_epoch) >= 10):
             print("no improvement in 10 epochs, break")
             break
@@ -275,7 +275,7 @@ if TO_TRAIN:
         print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
         print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
 else:
-    state = torch.load(model_name + ".pt", map_location=device)
+    state = torch.load("models/states/" + model_name + ".pt", map_location=device)
     model.load_state_dict(state["state_dict"])
     losses = state["loss"]
     train_loss = sum(losses["train"][-1])/len(losses["train"][-1])
