@@ -4,7 +4,7 @@
 
 ## How to run
 
-The requirements.txt is based on (...)
+For translation and attention plots the summary.ipynb can be run independently.
 
 ## Summary of results
 
