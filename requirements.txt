@@ -3,7 +3,7 @@ matplotlib!=3.1.1
 transformers==3.5.1
 datasets==1.1.2
 spacy==2.3.0
-torchtext==0.6.0
+torchtext==0.8.0
 
 --find-links https://download.pytorch.org/whl/torch_stable.html
 torch==1.7.0+cu101
