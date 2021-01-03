@@ -4,7 +4,7 @@
 
 ## How to run
 
-For translation and attention plots the summary.ipynb can be run independently.
+The summary.ipynb can be run independently for the translations and attention plots.
 
 ## Summary of results
 
