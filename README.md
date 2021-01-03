@@ -4,7 +4,7 @@
 
 ## How to run
 
-The summary.ipynb can be run independently for the translations and attention plots.
+The summary.ipynb can be run independently in Colab.
 
 ## Summary of results
 
