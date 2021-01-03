@@ -20,15 +20,17 @@ The summary.ipynb can be run independently for the translations and attention pl
 
 ---
 
-###### Original:
+#### Original
+
+###### German:
 `eine gruppe von menschen steht vor einem iglu .`\
 `ein mann mit kariertem hut in einer schwarzen jacke und einer schwarz-weiß gestreiften hose spielt auf einer bühne mit einem sänger und einem weiteren gitarristen im hintergrund auf einer e-gitarre .`
 
-###### Translation:
+###### English:
 `a group of people stands in front of an igloo .`\
 `a man in a black jacket and checkered hat wearing black and white striped pants plays an electric guitar on a stage with a singer and another guitar player in the background .`
 
-#### Short sentence
+#### Translations
 
 ###### Seq2Seq LSTM:
 `a group  of people standing in  front of a <unk> booth .`\
